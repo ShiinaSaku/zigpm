@@ -1,0 +1,35 @@
+{
+  "name": "@zigpm/zig",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Modern Zig distribution for npm — automatically packages every official Zig release",
+  "scripts": {
+    "build": "tsc",
+    "clean": "bun run src/cli/index.ts clean",
+    "sync": "bun run src/cli/index.ts sync",
+    "verify": "bun run src/cli/index.ts verify",
+    "generate": "bun run src/cli/index.ts generate",
+    "publish": "bun run src/cli/index.ts publish",
+    "test": "bun test",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "bin": {
+    "zig": "./packages/root/zig"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^6"
+  },
+  "files": [
+    "packages",
+    "LICENSE"
+  ],
+  "keywords": ["zig", "ziglang", "compiler", "zigpm"],
+  "license": "MIT"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@zigpm/zig",
+  "version": "{{version}}",
+  "description": "Modern Zig distribution for npm — install the Zig compiler with a single command",
+  "keywords": ["zig", "ziglang", "compiler", "zigpm"],
+  "license": "MIT",
+  "homepage": "https://github.com/zigpm/zig",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigpm/zig.git"
+  },
+  "bin": {
+    "zig": "zig"
+  },
+  "optionalDependencies": {{optionalDependencies}},
+  "engines": {
+    "node": ">=18"
+  },
+  "preferUnplugged": true
+}
