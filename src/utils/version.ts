@@ -1,14 +1,14 @@
-import type { ZigVersion } from '../types';
+import type { ZigVersion } from "../types";
 
 export function parseVersion(raw: string): ZigVersion {
-  const cleaned = raw.startsWith('v') ? raw.slice(1) : raw;
+  const cleaned = raw.startsWith("v") ? raw.slice(1) : raw;
 
   const stableMatch = cleaned.match(/^(\d+)\.(\d+)\.(\d+)$/);
   if (stableMatch) {
     return {
       raw,
       semver: cleaned,
-      channel: 'stable',
+      channel: "stable",
       major: parseInt(stableMatch[1], 10),
       minor: parseInt(stableMatch[2], 10),
       patch: parseInt(stableMatch[3], 10),
@@ -20,7 +20,7 @@ export function parseVersion(raw: string): ZigVersion {
     return {
       raw,
       semver: cleaned,
-      channel: 'beta',
+      channel: "beta",
       major: parseInt(betaMatch[1], 10),
       minor: parseInt(betaMatch[2], 10),
       patch: parseInt(betaMatch[3], 10),
@@ -33,7 +33,7 @@ export function parseVersion(raw: string): ZigVersion {
     return {
       raw,
       semver: cleaned,
-      channel: 'rc',
+      channel: "rc",
       major: parseInt(rcMatch[1], 10),
       minor: parseInt(rcMatch[2], 10),
       patch: parseInt(rcMatch[3], 10),
@@ -46,7 +46,7 @@ export function parseVersion(raw: string): ZigVersion {
     return {
       raw,
       semver: replaceDevPlus(cleaned),
-      channel: 'dev',
+      channel: "dev",
       major: parseInt(devMatch[1], 10),
       minor: parseInt(devMatch[2], 10),
       patch: parseInt(devMatch[3], 10),
@@ -58,7 +58,7 @@ export function parseVersion(raw: string): ZigVersion {
   const fallback: ZigVersion = {
     raw,
     semver: cleaned,
-    channel: 'dev',
+    channel: "dev",
     major: 0,
     minor: 0,
     patch: 0,
@@ -69,7 +69,7 @@ export function parseVersion(raw: string): ZigVersion {
 }
 
 function replaceDevPlus(version: string): string {
-  return version.replace(/\+/, '-');
+  return version.replace(/\+/, "-");
 }
 
 export function versionToNpm(version: string): string {
@@ -89,14 +89,14 @@ export function compareVersions(a: string, b: string): number {
   if (pa.minor !== pb.minor) return pa.minor - pb.minor;
   if (pa.patch !== pb.patch) return pa.patch - pb.patch;
 
-  const order = ['stable', 'rc', 'beta', 'dev'] as const;
+  const order = ["stable", "rc", "beta", "dev"] as const;
   const oa = order.indexOf(pa.channel);
   const ob = order.indexOf(pb.channel);
   if (oa !== ob) return oa - ob;
 
   if (pa.prerelease && pb.prerelease) {
-    const na = parseInt(pa.prerelease.split('.')[1] ?? '0', 10);
-    const nb = parseInt(pb.prerelease.split('.')[1] ?? '0', 10);
+    const na = parseInt(pa.prerelease.split(".")[1] ?? "0", 10);
+    const nb = parseInt(pb.prerelease.split(".")[1] ?? "0", 10);
     return na - nb;
   }
 

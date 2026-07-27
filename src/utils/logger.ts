@@ -1,23 +1,23 @@
-import type { LogLevel } from '../types';
+import type { LogLevel } from "../types";
 
 const PREFIXES: Record<LogLevel, string> = {
-  debug: '[DEBUG]',
-  info: '[INFO]',
-  warn: '[WARN]',
-  error: '[ERROR]',
+  debug: "[DEBUG]",
+  info: "[INFO]",
+  warn: "[WARN]",
+  error: "[ERROR]",
 };
 
 const COLORS: Record<LogLevel, string> = {
-  debug: '\x1b[36m',
-  info: '\x1b[32m',
-  warn: '\x1b[33m',
-  error: '\x1b[31m',
+  debug: "\x1b[36m",
+  info: "\x1b[32m",
+  warn: "\x1b[33m",
+  error: "\x1b[31m",
 };
 
-const RESET = '\x1b[0m';
+const RESET = "\x1b[0m";
 
 class Logger {
-  private level: LogLevel = 'info';
+  private level: LogLevel = "info";
   private timers = new Map<string, number>();
 
   setLevel(level: LogLevel) {
@@ -25,15 +25,16 @@ class Logger {
   }
 
   private log(level: LogLevel, message: string, ...args: unknown[]) {
-    const levels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
+    const levels: LogLevel[] = ["debug", "info", "warn", "error"];
     if (levels.indexOf(level) < levels.indexOf(this.level)) return;
 
     const prefix = PREFIXES[level];
     const color = COLORS[level];
-    const formatted = args.length > 0 ? `${message} ${args.map(a => JSON.stringify(a)).join(' ')}` : message;
+    const formatted =
+      args.length > 0 ? `${message} ${args.map((a) => JSON.stringify(a)).join(" ")}` : message;
     const output = `${color}${prefix}${RESET} ${formatted}`;
 
-    if (level === 'error') {
+    if (level === "error") {
       console.error(output);
     } else {
       console.log(output);
@@ -41,19 +42,19 @@ class Logger {
   }
 
   debug(message: string, ...args: unknown[]) {
-    this.log('debug', message, ...args);
+    this.log("debug", message, ...args);
   }
 
   info(message: string, ...args: unknown[]) {
-    this.log('info', message, ...args);
+    this.log("info", message, ...args);
   }
 
   warn(message: string, ...args: unknown[]) {
-    this.log('warn', message, ...args);
+    this.log("warn", message, ...args);
   }
 
   error(message: string, ...args: unknown[]) {
-    this.log('error', message, ...args);
+    this.log("error", message, ...args);
   }
 
   time(label: string) {
@@ -72,7 +73,7 @@ class Logger {
   }
 
   divider() {
-    this.info('─'.repeat(60));
+    this.info("─".repeat(60));
   }
 }
 

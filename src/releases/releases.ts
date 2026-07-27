@@ -1,8 +1,8 @@
-import { logger } from '../utils/logger';
-import type { ZigRelease } from '../types';
-import { parseVersion, compareVersions } from '../utils/version';
+import { logger } from "../utils/logger";
+import type { ZigRelease } from "../types";
+import { parseVersion, compareVersions } from "../utils/version";
 
-const INDEX_URL = 'https://ziglang.org/download/index.json';
+const INDEX_URL = "https://ziglang.org/download/index.json";
 
 let cachedIndex: Record<string, ZigRelease> | null = null;
 let cacheTime = 0;
@@ -13,14 +13,14 @@ export async function fetchReleaseIndex(): Promise<Record<string, ZigRelease>> {
     return cachedIndex;
   }
 
-  logger.info('Fetching Zig release index');
+  logger.info("Fetching Zig release index");
   const response = await fetch(INDEX_URL);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch release index: ${response.status} ${response.statusText}`);
   }
 
-  const data = await response.json() as Record<string, ZigRelease>;
+  const data = (await response.json()) as Record<string, ZigRelease>;
   cachedIndex = data;
   cacheTime = Date.now();
 
@@ -41,13 +41,13 @@ export function getLatestVersion(releases: Record<string, ZigRelease>): string {
     return (order[pa.channel] ?? 99) - (order[pb.channel] ?? 99);
   });
 
-  return versions[0] ?? '';
+  return versions[0] ?? "";
 }
 
 export function getStableVersion(releases: Record<string, ZigRelease>): string | null {
   let latest: string | null = null;
   for (const version of Object.keys(releases)) {
-    if (parseVersion(version).channel === 'stable') {
+    if (parseVersion(version).channel === "stable") {
       if (!latest || compareVersions(version, latest) > 0) {
         latest = version;
       }
@@ -72,5 +72,5 @@ export function getReleasePlatforms(release: ZigRelease): string[] {
 export function clearReleaseCache(): void {
   cachedIndex = null;
   cacheTime = 0;
-  logger.debug('Release cache cleared');
+  logger.debug("Release cache cleared");
 }

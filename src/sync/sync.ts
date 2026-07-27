@@ -1,24 +1,24 @@
-import { readFile, writeFile } from 'fs/promises';
-import { existsSync } from 'fs';
-import { logger } from '../utils/logger';
-import { fetchReleaseIndex, getUnpublishedReleases } from '../releases/releases';
-import { parseVersion, compareVersions } from '../utils/version';
-import { downloadArchive } from '../download/download';
-import { verifyArchive } from '../verify/verify';
-import { extractArchive } from '../extract/extract';
-import { generatePlatformPackage, generateRootPackage } from '../generate/generate';
-import { SUPPORTED_PLATFORMS, getArchiveExtension } from '../utils/platform';
-import { ensureDir, tempDir } from '../utils/file';
-import type { SyncResult, ZigRelease } from '../types';
+import { readFile, writeFile } from "fs/promises";
+import { existsSync } from "fs";
+import { logger } from "../utils/logger";
+import { fetchReleaseIndex, getUnpublishedReleases } from "../releases/releases";
+import { parseVersion, compareVersions } from "../utils/version";
+import { downloadArchive } from "../download/download";
+import { verifyArchive } from "../verify/verify";
+import { extractArchive } from "../extract/extract";
+import { generatePlatformPackage, generateRootPackage } from "../generate/generate";
+import { SUPPORTED_PLATFORMS, getArchiveExtension } from "../utils/platform";
+import { ensureDir, tempDir } from "../utils/file";
+import type { SyncResult, ZigRelease } from "../types";
 
-const PUBLISHED_VERSIONS_FILE = 'packages/.published.json';
+const PUBLISHED_VERSIONS_FILE = "packages/.published.json";
 
 export async function getPublishedVersions(): Promise<string[]> {
   if (!existsSync(PUBLISHED_VERSIONS_FILE)) {
     return [];
   }
   try {
-    const data = await readFile(PUBLISHED_VERSIONS_FILE, 'utf-8');
+    const data = await readFile(PUBLISHED_VERSIONS_FILE, "utf-8");
     return JSON.parse(data) as string[];
   } catch {
     return [];
@@ -31,7 +31,7 @@ export async function savePublishedVersion(version: string): Promise<void> {
     versions.push(version);
     versions.sort((a, b) => -compareVersions(a, b));
   }
-  ensureDir('packages');
+  ensureDir("packages");
   await writeFile(PUBLISHED_VERSIONS_FILE, JSON.stringify(versions, null, 2));
 }
 
@@ -44,19 +44,19 @@ export async function syncRelease(version: string, release: ZigRelease): Promise
   const succeeded: string[] = [];
   const failed: string[] = [];
 
-  const platformPromises = SUPPORTED_PLATFORMS.map(async platform => {
-    const archKey = platform.suffix.includes('macos')
-      ? platform.suffix.replace('macos-', '')
-      : platform.suffix.includes('windows')
-        ? platform.suffix.replace('windows-', '')
-        : platform.suffix.replace('linux-', '');
+  const platformPromises = SUPPORTED_PLATFORMS.map(async (platform) => {
+    const archKey = platform.suffix.includes("macos")
+      ? platform.suffix.replace("macos-", "")
+      : platform.suffix.includes("windows")
+        ? platform.suffix.replace("windows-", "")
+        : platform.suffix.replace("linux-", "");
 
     const platformKey = Object.keys(release.platforms).find(
-      k => k.includes(archKey) && (
-        (platform.os === 'darwin' && k.includes('macos')) ||
-        (platform.os === 'win32' && k.includes('windows')) ||
-        (platform.os === 'linux' && k.includes('linux'))
-      ),
+      (k) =>
+        k.includes(archKey) &&
+        ((platform.os === "darwin" && k.includes("macos")) ||
+          (platform.os === "win32" && k.includes("windows")) ||
+          (platform.os === "linux" && k.includes("linux"))),
     );
 
     if (!platformKey || !release.platforms[platformKey]) {
@@ -83,7 +83,9 @@ export async function syncRelease(version: string, release: ZigRelease): Promise
 
       if (!verifyResult.valid) {
         failed.push(platform.suffix);
-        logger.error(`Verification failed for ${platform.suffix}: ${verifyResult.errors.join(', ')}`);
+        logger.error(
+          `Verification failed for ${platform.suffix}: ${verifyResult.errors.join(", ")}`,
+        );
         return;
       }
 
@@ -122,7 +124,7 @@ export async function syncAll(): Promise<SyncResult[]> {
   const unpublished = getUnpublishedReleases(releases, published);
 
   if (Object.keys(unpublished).length === 0) {
-    logger.info('No new releases to sync');
+    logger.info("No new releases to sync");
     return [];
   }
 

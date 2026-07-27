@@ -1,12 +1,12 @@
-import { readFile } from 'fs/promises';
-import { existsSync } from 'fs';
-import { join } from 'path';
-import { logger } from '../utils/logger';
-import { getPlatformPackageName, SUPPORTED_PLATFORMS } from '../utils/platform';
-import type { PackageConfig } from '../types';
+import { readFile } from "fs/promises";
+import { existsSync } from "fs";
+import { join } from "path";
+import { logger } from "../utils/logger";
+import { getPlatformPackageName, SUPPORTED_PLATFORMS } from "../utils/platform";
+import type { PackageConfig } from "../types";
 
-const ROOT_PACKAGE_NAME = '@zigpm/zig';
-const NPM_REGISTRY = 'https://registry.npmjs.org';
+const ROOT_PACKAGE_NAME = "@zigpm/zig";
+const NPM_REGISTRY = "https://registry.npmjs.org";
 
 export interface PublishOptions {
   dryRun?: boolean;
@@ -18,14 +18,16 @@ export async function publishVersion(version: string, options: PublishOptions = 
   const { dryRun = false, tag = getNpmTag(version) } = options;
 
   logger.divider();
-  logger.info(`Publishing ${ROOT_PACKAGE_NAME}@${version} (tag: ${tag})${dryRun ? ' [DRY RUN]' : ''}`);
+  logger.info(
+    `Publishing ${ROOT_PACKAGE_NAME}@${version} (tag: ${tag})${dryRun ? " [DRY RUN]" : ""}`,
+  );
 
   const missing = findMissingPlatforms(version);
   if (missing.length > 0) {
-    logger.warn(`Missing platform packages: ${missing.join(', ')}`);
+    logger.warn(`Missing platform packages: ${missing.join(", ")}`);
   }
 
-  const platformPackages = SUPPORTED_PLATFORMS.map(p => getPlatformPackageName(p));
+  const platformPackages = SUPPORTED_PLATFORMS.map((p) => getPlatformPackageName(p));
 
   for (const pkgName of platformPackages) {
     const pkgDir = `packages/${pkgName}`;
@@ -36,7 +38,7 @@ export async function publishVersion(version: string, options: PublishOptions = 
     await publishPackage(pkgName, pkgDir, version, tag, dryRun);
   }
 
-  const rootDir = 'packages/root';
+  const rootDir = "packages/root";
   if (existsSync(rootDir)) {
     await publishPackage(ROOT_PACKAGE_NAME, rootDir, version, tag, dryRun);
   }
@@ -51,13 +53,13 @@ async function publishPackage(
   tag: string,
   dryRun: boolean,
 ): Promise<void> {
-  const packageJsonPath = join(dir, 'package.json');
+  const packageJsonPath = join(dir, "package.json");
   if (!existsSync(packageJsonPath)) {
     logger.warn(`No package.json found in ${dir}`);
     return;
   }
 
-  const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf-8')) as PackageConfig;
+  const packageJson = JSON.parse(await readFile(packageJsonPath, "utf-8")) as PackageConfig;
 
   if (await isPublished(name, version)) {
     logger.info(`Already published: ${name}@${version}`);
@@ -93,9 +95,12 @@ async function isPublished(name: string, version: string): Promise<boolean> {
 }
 
 async function npmPublish(dir: string, tag: string): Promise<boolean> {
-  const proc = Bun.spawnSync(['npm', 'publish', '--provenance', '--tag', tag, '--access', 'public'], {
-    cwd: dir,
-  });
+  const proc = Bun.spawnSync(
+    ["npm", "publish", "--provenance", "--tag", tag, "--access", "public"],
+    {
+      cwd: dir,
+    },
+  );
 
   if (proc.exitCode !== 0) {
     logger.error(`npm publish failed: ${proc.stderr.toString()}`);
@@ -106,10 +111,10 @@ async function npmPublish(dir: string, tag: string): Promise<boolean> {
 }
 
 function getNpmTag(version: string): string {
-  if (version.includes('-dev')) return 'dev';
-  if (version.includes('-beta')) return 'beta';
-  if (version.includes('-rc')) return 'rc';
-  return 'latest';
+  if (version.includes("-dev")) return "dev";
+  if (version.includes("-beta")) return "beta";
+  if (version.includes("-rc")) return "rc";
+  return "latest";
 }
 
 function findMissingPlatforms(version: string): string[] {

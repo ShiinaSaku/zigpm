@@ -1,8 +1,8 @@
-import { logger } from '../utils/logger';
-import type { Mirror } from '../types';
+import { logger } from "../utils/logger";
+import type { Mirror } from "../types";
 
-const MIRRORS_URL = 'https://ziglang.org/download/community-mirrors.txt';
-const CACHE_KEY = 'mirrors';
+const MIRRORS_URL = "https://ziglang.org/download/community-mirrors.txt";
+const CACHE_KEY = "mirrors";
 const CACHE_TTL = 3_600_000;
 
 let cachedMirrors: Mirror[] | null = null;
@@ -22,7 +22,7 @@ export async function fetchMirrors(): Promise<Mirror[]> {
   const mirrors = parseMirrors(text);
 
   if (mirrors.length === 0) {
-    throw new Error('No mirrors found in community-mirrors.txt');
+    throw new Error("No mirrors found in community-mirrors.txt");
   }
 
   cachedMirrors = mirrors;
@@ -34,10 +34,10 @@ export async function fetchMirrors(): Promise<Mirror[]> {
 
 function parseMirrors(text: string): Mirror[] {
   return text
-    .split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0 && !line.startsWith('#'))
-    .map(url => ({ url: url.replace(/\/+$/, '') }));
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith("#"))
+    .map((url) => ({ url: url.replace(/\/+$/, "") }));
 }
 
 export function shuffleMirrors(mirrors: Mirror[]): Mirror[] {
@@ -52,5 +52,5 @@ export function shuffleMirrors(mirrors: Mirror[]): Mirror[] {
 export function clearMirrorCache(): void {
   cachedMirrors = null;
   cacheTime = 0;
-  logger.debug('Mirror cache cleared');
+  logger.debug("Mirror cache cleared");
 }

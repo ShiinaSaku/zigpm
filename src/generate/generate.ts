@@ -1,12 +1,12 @@
-import { readFile, writeFile, copyFile, readdir, stat } from 'fs/promises';
-import { existsSync } from 'fs';
-import { join, basename } from 'path';
-import { logger } from '../utils/logger';
-import { getPlatformPackageName, SUPPORTED_PLATFORMS } from '../utils/platform';
-import { ensureDir } from '../utils/file';
-import type { PlatformTriple } from '../types';
+import { readFile, writeFile, copyFile, readdir, stat } from "fs/promises";
+import { existsSync } from "fs";
+import { join, basename } from "path";
+import { logger } from "../utils/logger";
+import { getPlatformPackageName, SUPPORTED_PLATFORMS } from "../utils/platform";
+import { ensureDir } from "../utils/file";
+import type { PlatformTriple } from "../types";
 
-const ROOT_PACKAGE_NAME = '@zigpm/zig';
+const ROOT_PACKAGE_NAME = "@zigpm/zig";
 
 export async function generatePlatformPackage(
   version: string,
@@ -17,7 +17,7 @@ export async function generatePlatformPackage(
   const pkgDir = `packages/${pkgName}`;
   ensureDir(pkgDir);
 
-  const binDir = join(pkgDir, 'bin');
+  const binDir = join(pkgDir, "bin");
   ensureDir(binDir);
 
   const zigBinary = await findBinary(extractDir, platform.binaryName);
@@ -35,29 +35,26 @@ export async function generatePlatformPackage(
     description: `Zig compiler for ${platform.os}-${platform.arch}`,
     os: platform.npmOs,
     cpu: platform.npmCpu,
-    license: 'MIT',
+    license: "MIT",
     bin: {
       zig: `bin/${platform.binaryName}`,
     },
     preferUnplugged: true,
   };
 
-  await writeFile(
-    join(pkgDir, 'package.json'),
-    JSON.stringify(packageJson, null, 2) + '\n',
-  );
+  await writeFile(join(pkgDir, "package.json"), JSON.stringify(packageJson, null, 2) + "\n");
 
   const license = await readLicense(extractDir);
-  await writeFile(join(pkgDir, 'LICENSE'), license);
+  await writeFile(join(pkgDir, "LICENSE"), license);
 
   const readme = generatePlatformReadme(pkgName, version, platform);
-  await writeFile(join(pkgDir, 'README.md'), readme);
+  await writeFile(join(pkgDir, "README.md"), readme);
 
   logger.info(`Generated ${pkgName}@${version}`);
 }
 
 export async function generateRootPackage(version: string): Promise<void> {
-  const rootDir = 'packages/root';
+  const rootDir = "packages/root";
   ensureDir(rootDir);
 
   const optionalDeps: Record<string, string> = {};
@@ -69,30 +66,27 @@ export async function generateRootPackage(version: string): Promise<void> {
   const packageJson = {
     name: ROOT_PACKAGE_NAME,
     version,
-    description: 'Modern Zig distribution for npm — install the Zig compiler with a single command',
-    keywords: ['zig', 'ziglang', 'compiler', 'zigpm'],
-    license: 'MIT',
-    homepage: 'https://github.com/zigpm/zig',
+    description: "Modern Zig distribution for npm — install the Zig compiler with a single command",
+    keywords: ["zig", "ziglang", "compiler", "zigpm"],
+    license: "MIT",
+    homepage: "https://github.com/zigpm/zig",
     repository: {
-      type: 'git',
-      url: 'git+https://github.com/zigpm/zig.git',
+      type: "git",
+      url: "git+https://github.com/zigpm/zig.git",
     },
     bin: {
-      zig: 'zig',
+      zig: "zig",
     },
     optionalDependencies: optionalDeps,
     engines: {
-      node: '>=18',
+      node: ">=18",
     },
     preferUnplugged: true,
   };
 
-  await writeFile(
-    join(rootDir, 'package.json'),
-    JSON.stringify(packageJson, null, 2) + '\n',
-  );
+  await writeFile(join(rootDir, "package.json"), JSON.stringify(packageJson, null, 2) + "\n");
 
-  await writeFile(join(rootDir, 'LICENSE'), await readDefaultLicense());
+  await writeFile(join(rootDir, "LICENSE"), await readDefaultLicense());
 
   const wrapperScript = `#!/usr/bin/env bash
 root="$(dirname "$(dirname "$(readlink -f "$0")")")"
@@ -112,11 +106,11 @@ else
 fi
 `;
 
-  await writeFile(join(rootDir, 'zig'), wrapperScript);
-  await makeExecutable(join(rootDir, 'zig'));
+  await writeFile(join(rootDir, "zig"), wrapperScript);
+  await makeExecutable(join(rootDir, "zig"));
 
   const readme = generateRootReadme(version);
-  await writeFile(join(rootDir, 'README.md'), readme);
+  await writeFile(join(rootDir, "README.md"), readme);
 
   logger.info(`Generated ${ROOT_PACKAGE_NAME}@${version}`);
 }
@@ -124,9 +118,9 @@ fi
 async function findBinary(dir: string, binaryName: string): Promise<string | null> {
   const candidates = [
     join(dir, binaryName),
-    join(dir, 'zig', binaryName),
-    join(dir, 'bin', binaryName),
-    join(dir, 'zig', 'bin', binaryName),
+    join(dir, "zig", binaryName),
+    join(dir, "bin", binaryName),
+    join(dir, "zig", "bin", binaryName),
   ];
 
   for (const candidate of candidates) {
@@ -156,17 +150,14 @@ async function findBinary(dir: string, binaryName: string): Promise<string | nul
 }
 
 async function makeExecutable(filePath: string): Promise<void> {
-  await Bun.spawnSync(['chmod', '+x', filePath]);
+  await Bun.spawnSync(["chmod", "+x", filePath]);
 }
 
 async function readLicense(extractDir: string): Promise<string> {
-  const candidates = [
-    join(extractDir, 'LICENSE'),
-    join(extractDir, 'zig', 'LICENSE'),
-  ];
+  const candidates = [join(extractDir, "LICENSE"), join(extractDir, "zig", "LICENSE")];
   for (const candidate of candidates) {
     if (existsSync(candidate)) {
-      return await readFile(candidate, 'utf-8');
+      return await readFile(candidate, "utf-8");
     }
   }
   return await readDefaultLicense();
@@ -197,7 +188,11 @@ SOFTWARE.
 `;
 }
 
-function generatePlatformReadme(pkgName: string, version: string, platform: PlatformTriple): string {
+function generatePlatformReadme(
+  pkgName: string,
+  version: string,
+  platform: PlatformTriple,
+): string {
   return `# ${pkgName}
 
 Zig compiler for ${platform.os}-${platform.arch}.
@@ -216,8 +211,8 @@ ${version}
 
 ## Platform
 
-- OS: ${platform.npmOs.join(', ')}
-- CPU: ${platform.npmCpu.join(', ')}
+- OS: ${platform.npmOs.join(", ")}
+- CPU: ${platform.npmCpu.join(", ")}
 
 ## License
 

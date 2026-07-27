@@ -33,6 +33,7 @@ npx @zigpm/zig version
 The root `@zigpm/zig` package uses npm `optionalDependencies` to install only the platform-specific package for the user's system.
 
 Each platform package contains:
+
 - The `zig` (or `zig.exe`) binary
 - `package.json` with os/cpu restrictions
 - License file

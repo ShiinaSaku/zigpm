@@ -1,10 +1,10 @@
-import { createWriteStream, existsSync } from 'fs';
-import { unlink } from 'fs/promises';
-import { Readable } from 'stream';
-import { pipeline } from 'stream/promises';
-import { logger } from '../utils/logger';
-import { fetchMirrors, shuffleMirrors } from './mirrors';
-import type { Mirror } from '../types';
+import { createWriteStream, existsSync } from "fs";
+import { unlink } from "fs/promises";
+import { Readable } from "stream";
+import { pipeline } from "stream/promises";
+import { logger } from "../utils/logger";
+import { fetchMirrors, shuffleMirrors } from "./mirrors";
+import type { Mirror } from "../types";
 
 export interface DownloadOptions {
   url: string;
@@ -34,7 +34,7 @@ export async function downloadFile(options: DownloadOptions): Promise<string> {
       }
 
       if (!response.body) {
-        throw new Error('Response body is null');
+        throw new Error("Response body is null");
       }
 
       const fileStream = createWriteStream(dest);
@@ -52,12 +52,12 @@ export async function downloadFile(options: DownloadOptions): Promise<string> {
 
       if (attempt < retries) {
         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10_000);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
   }
 
-  throw lastError ?? new Error('Download failed after all retries');
+  throw lastError ?? new Error("Download failed after all retries");
 }
 
 export async function downloadFromMirrors(
@@ -90,7 +90,7 @@ export async function downloadFromMirrors(
   }
 
   const directUrl = `https://ziglang.org/download/${path}`;
-  logger.info('All mirrors failed, trying direct download');
+  logger.info("All mirrors failed, trying direct download");
   return await downloadFile({
     url: directUrl,
     dest,

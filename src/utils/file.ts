@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync } from "fs";
 
 export function ensureDir(dir: string): void {
   if (!existsSync(dir)) {
@@ -17,5 +17,5 @@ export function packageDir(version: string): string {
 }
 
 export function packageRootDir(): string {
-  return 'packages/root';
+  return "packages/root";
 }

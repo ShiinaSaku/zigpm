@@ -17,7 +17,7 @@ export interface ZigPlatformRelease {
 export interface ZigVersion {
   raw: string;
   semver: string;
-  channel: 'stable' | 'beta' | 'rc' | 'dev';
+  channel: "stable" | "beta" | "rc" | "dev";
   major: number;
   minor: number;
   patch: number;
@@ -72,7 +72,7 @@ export interface VerifyResult {
   errors: string[];
 }
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = "debug" | "info" | "warn" | "error";
 
 export interface CliCommand {
   name: string;
