@@ -8,10 +8,10 @@ import { verifyArchive } from "../verify/verify";
 import { extractArchive } from "../extract/extract";
 import { generatePlatformPackage, generateRootPackage } from "../generate/generate";
 import { SUPPORTED_PLATFORMS, getArchiveExtension } from "../utils/platform";
-import { ensureDir, tempDir } from "../utils/file";
+import { tempDir } from "../utils/file";
 import type { SyncResult, ZigRelease } from "../types";
 
-const PUBLISHED_VERSIONS_FILE = "packages/.published.json";
+const PUBLISHED_VERSIONS_FILE = "published-versions.json";
 
 export async function getPublishedVersions(): Promise<string[]> {
   if (!existsSync(PUBLISHED_VERSIONS_FILE)) {
@@ -31,8 +31,7 @@ export async function savePublishedVersion(version: string): Promise<void> {
     versions.push(version);
     versions.sort((a, b) => -compareVersions(a, b));
   }
-  ensureDir("packages");
-  await writeFile(PUBLISHED_VERSIONS_FILE, JSON.stringify(versions, null, 2));
+  await writeFile(PUBLISHED_VERSIONS_FILE, JSON.stringify(versions, null, 2) + "\n");
 }
 
 export async function syncRelease(version: string, release: ZigRelease): Promise<SyncResult> {

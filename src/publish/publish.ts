@@ -3,6 +3,7 @@ import { existsSync } from "fs";
 import { join } from "path";
 import { logger } from "../utils/logger";
 import { getPlatformPackageName, SUPPORTED_PLATFORMS } from "../utils/platform";
+import { savePublishedVersion } from "../sync/sync";
 import type { PackageConfig } from "../types";
 
 const ROOT_PACKAGE_NAME = "@zigpm/zig";
@@ -41,6 +42,10 @@ export async function publishVersion(version: string, options: PublishOptions = 
   const rootDir = "packages/root";
   if (existsSync(rootDir)) {
     await publishPackage(ROOT_PACKAGE_NAME, rootDir, version, tag, dryRun);
+  }
+
+  if (!dryRun) {
+    await savePublishedVersion(version);
   }
 
   logger.info(`Publishing complete for ${ROOT_PACKAGE_NAME}@${version}`);

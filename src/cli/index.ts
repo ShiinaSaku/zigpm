@@ -1,13 +1,13 @@
 #!/usr/bin/env bun
 import { logger } from "../utils/logger";
-import { syncAll } from "../sync/sync";
+import { syncAll, syncRelease } from "../sync/sync";
 import { verifyArchive } from "../verify/verify";
 import { generateRootPackage, generatePlatformPackage } from "../generate/generate";
 import { publishVersion } from "../publish/publish";
 import { clearMirrorCache } from "../download/mirrors";
 import { clearReleaseCache } from "../releases/releases";
 import { getPublishedVersions } from "../sync/sync";
-import { fetchReleaseIndex } from "../releases/releases";
+import { fetchReleaseIndex, getUnpublishedReleases } from "../releases/releases";
 import { SUPPORTED_PLATFORMS, getArchiveExtension } from "../utils/platform";
 import { ensureDir, tempDir } from "../utils/file";
 import { downloadFromMirrors } from "../download/download";
@@ -17,10 +17,21 @@ import type { CliCommand } from "../types";
 const commands: Record<string, CliCommand> = {
   sync: {
     name: "sync",
-    description: "Sync all unpublished Zig releases from the official index",
-    run: async () => {
-      const results = await syncAll();
-      logger.info(`Sync completed: ${results.length} releases processed`);
+    description: "Sync a specific version or all unpublished releases",
+    run: async (args: string[]) => {
+      const version = args[0];
+      if (version) {
+        const releases = await fetchReleaseIndex();
+        const release = releases[version];
+        if (!release) {
+          logger.error(`Release ${version} not found in index`);
+          return;
+        }
+        await syncRelease(version, release);
+      } else {
+        const results = await syncAll();
+        logger.info(`Sync completed: ${results.length} releases processed`);
+      }
     },
   },
   verify: {
@@ -114,6 +125,31 @@ const commands: Record<string, CliCommand> = {
       await publishVersion(version, { dryRun });
     },
   },
+  detect: {
+    name: "detect",
+    description: "Detect unpublished Zig releases from the official index",
+    run: async () => {
+      const releases = await fetchReleaseIndex();
+      const published = await getPublishedVersions();
+      const unpublished = getUnpublishedReleases(releases, published);
+      const versions = Object.keys(unpublished);
+      process.stdout.write(JSON.stringify(versions));
+    },
+  },
+  mark: {
+    name: "mark",
+    description: "Mark a version as published in published-versions.json",
+    run: async (args: string[]) => {
+      const version = args[0];
+      if (!version) {
+        logger.error("Usage: zigpm mark <version>");
+        return;
+      }
+      const { savePublishedVersion } = await import("../sync/sync");
+      await savePublishedVersion(version);
+      logger.info(`Marked ${version} as published`);
+    },
+  },
   clean: {
     name: "clean",
     description: "Clean generated packages and temporary files",
@@ -149,10 +185,8 @@ async function cleanAll(): Promise<void> {
   if (existsSync(packagesDir)) {
     const entries = await readdir(packagesDir);
     for (const entry of entries) {
-      if (entry !== ".published.json") {
-        const fullPath = join(packagesDir, entry);
-        await rm(fullPath, { recursive: true, force: true });
-      }
+      const fullPath = join(packagesDir, entry);
+      await rm(fullPath, { recursive: true, force: true });
     }
   }
 

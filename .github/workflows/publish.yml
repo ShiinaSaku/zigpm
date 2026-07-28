@@ -1,8 +1,8 @@
 name: Publish Zig Releases
 
 on:
-  #schedule:
-    #- cron: "0 */6 * * *"
+  schedule:
+    - cron: "0 */6 * * *"
   workflow_dispatch:
     inputs:
       version:
@@ -45,12 +45,14 @@ jobs:
         id: detect
         run: |
           if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "versions=[\"${{ github.event.inputs.version }}\"]" >> $GITHUB_OUTPUT
-            echo "should_publish=true" >> $GITHUB_OUTPUT
+            VERSIONS='["${{ github.event.inputs.version }}"]'
           else
-            bun run src/cli/index.ts list > /dev/null 2>&1 || true
-            VERSIONS=$(cat packages/.published.json 2>/dev/null || echo "[]")
-            echo "versions=$VERSIONS" >> $GITHUB_OUTPUT
+            VERSIONS=$(bun run src/cli/index.ts detect)
+          fi
+          echo "versions=$VERSIONS" >> $GITHUB_OUTPUT
+          if [ "$VERSIONS" = "[]" ]; then
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          else
             echo "should_publish=true" >> $GITHUB_OUTPUT
           fi
 
@@ -71,14 +73,6 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Restore cached packages
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: packages
-          key: zigpm-packages-${{ matrix.version }}-${{ github.run_id }}
-          restore-keys: |
-            zigpm-packages-${{ matrix.version }}-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -110,6 +104,8 @@ jobs:
     environment: npm-publish
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
@@ -143,6 +139,14 @@ jobs:
           bun run src/cli/index.ts publish ${{ matrix.version }}
         env:
           NPM_CONFIG_PROVENANCE: true
+
+      - name: Commit published-versions.json
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add published-versions.json
+          git diff --staged --quiet || git commit -m "chore: mark ${{ matrix.version }} as published"
+          git push
 
       - name: Create GitHub Release
         if: ${{ !github.event.inputs.dry_run }}
