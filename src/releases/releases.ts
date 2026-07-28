@@ -61,8 +61,14 @@ export function getUnpublishedReleases(
   publishedVersions: string[],
 ): Record<string, ZigRelease> {
   return Object.fromEntries(
-    Object.entries(releases).filter(([version]) => !publishedVersions.includes(version)),
+    Object.entries(releases).filter(
+      ([version]) => isValidVersionKey(version) && !publishedVersions.includes(version),
+    ),
   );
+}
+
+function isValidVersionKey(key: string): boolean {
+  return /^\d/.test(key);
 }
 
 export function getReleasePlatforms(release: ZigRelease): string[] {
