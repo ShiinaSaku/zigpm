@@ -12,7 +12,7 @@ export const SUPPORTED_PLATFORMS: PlatformTriple[] = [
   {
     os: "linux",
     arch: "aarch64",
-    npmOs: ["linux"],
+    npmOs: ["linux", "android"],
     npmCpu: ["arm64"],
     suffix: "linux-aarch64",
     binaryName: "zig",

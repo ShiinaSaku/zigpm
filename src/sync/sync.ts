@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { logger } from "../utils/logger";
-import { fetchReleaseIndex, getUnpublishedReleases } from "../releases/releases";
+import { fetchReleaseIndex, getUnpublishedReleases, getReleasePlatforms, getPlatformRelease } from "../releases/releases";
 import { parseVersion, compareVersions } from "../utils/version";
 import { downloadArchive } from "../download/download";
 import { verifyArchive } from "../verify/verify";
@@ -50,7 +50,9 @@ export async function syncRelease(version: string, release: ZigRelease): Promise
         ? platform.suffix.replace("windows-", "")
         : platform.suffix.replace("linux-", "");
 
-    const platformKey = Object.keys(release.platforms).find(
+    const platformKeys = getReleasePlatforms(release);
+
+    const platformKey = platformKeys.find(
       (k) =>
         k.includes(archKey) &&
         ((platform.os === "darwin" && k.includes("macos")) ||
@@ -58,12 +60,12 @@ export async function syncRelease(version: string, release: ZigRelease): Promise
           (platform.os === "linux" && k.includes("linux"))),
     );
 
-    if (!platformKey || !release.platforms[platformKey]) {
+    if (!platformKey) {
       logger.debug(`Platform ${platform.suffix} not available for ${version}`);
       return;
     }
 
-    const platformRelease = release.platforms[platformKey];
+    const platformRelease = getPlatformRelease(release, platformKey);
     const ext = getArchiveExtension(platform.os);
 
     try {

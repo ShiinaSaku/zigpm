@@ -1,8 +1,20 @@
 import { logger } from "../utils/logger";
-import type { ZigRelease } from "../types";
+import type { ZigPlatformRelease, ZigRelease } from "../types";
 import { parseVersion, compareVersions } from "../utils/version";
 
 const INDEX_URL = "https://ziglang.org/download/index.json";
+
+const META_KEYS = new Set([
+  "version", "date", "docs", "stdDocs", "notes", "src", "bootstrap", "published_at",
+]);
+
+export function getReleasePlatforms(release: ZigRelease): string[] {
+  return Object.keys(release).filter((k) => !META_KEYS.has(k));
+}
+
+export function getPlatformRelease(release: ZigRelease, platformKey: string): ZigPlatformRelease {
+  return release[platformKey] as ZigPlatformRelease;
+}
 
 let cachedIndex: Record<string, ZigRelease> | null = null;
 let cacheTime = 0;
@@ -69,10 +81,6 @@ export function getUnpublishedReleases(
 
 function isValidVersionKey(key: string): boolean {
   return /^\d/.test(key);
-}
-
-export function getReleasePlatforms(release: ZigRelease): string[] {
-  return Object.keys(release.platforms);
 }
 
 export function clearReleaseCache(): void {

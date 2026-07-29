@@ -68,8 +68,6 @@ jobs:
       matrix:
         version: ${{ fromJson(needs.detect.outputs.versions) }}
       max-parallel: 1
-    outputs:
-      status: ${{ steps.sync.outputs.status }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -84,8 +82,6 @@ jobs:
         id: sync
         run: |
           bun run src/cli/index.ts sync ${{ matrix.version }} 2>&1 | tee sync.log
-          echo "status=done" >> $GITHUB_OUTPUT
-        continue-on-error: true
 
       - name: Upload sync logs on failure
         if: failure()
@@ -95,10 +91,25 @@ jobs:
           path: sync.log
           retention-days: 7
 
+      - name: Cache packages
+        if: success()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: packages
+          key: zigpm-packages-${{ matrix.version }}-${{ github.run_id }}
+
+      - name: Cache published-versions
+        if: success()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: published-versions-${{ matrix.version }}
+          path: published-versions.json
+          retention-days: 1
+
   publish:
     name: Publish Release
     needs: [detect, sync]
-    if: always() && needs.sync.result == 'success'
+    if: always() && needs.detect.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -115,15 +126,34 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
 
       - name: Restore cached packages
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: packages
           key: zigpm-packages-${{ matrix.version }}-${{ github.run_id }}
-          restore-keys: |
-            zigpm-packages-${{ matrix.version }}-
+          fail-on-cache-miss: true
+
+      - name: Restore published-versions
+        uses: actions/download-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: published-versions-${{ matrix.version }}
+          path: .
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Fetch release notes
+        id: notes
+        run: |
+          NOTES_URL=$(curl -sSL https://ziglang.org/download/index.json | jq -r '.["${{ matrix.version }}"].notes // empty')
+          if [ -n "$NOTES_URL" ]; then
+            CHANGELOG=$(curl -sSL "$NOTES_URL" | head -c 50000)
+            EOF=$(dd if=/dev/urandom bs=1 count=12 2>/dev/null | base64 | tr -dc 'a-zA-Z0-9' | head -c8)
+            echo "body<<$EOF" >> $GITHUB_OUTPUT
+            echo "$CHANGELOG" >> $GITHUB_OUTPUT
+            echo "$EOF" >> $GITHUB_OUTPUT
+          else
+            echo "body=Zig ${{ matrix.version }} release" >> $GITHUB_OUTPUT
+          fi
 
       - name: Verify packages
         run: |
@@ -144,6 +174,7 @@ jobs:
           NPM_CONFIG_PROVENANCE: true
 
       - name: Commit published-versions.json
+        if: ${{ !github.event.inputs.dry_run }}
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
@@ -151,20 +182,21 @@ jobs:
           git diff --staged --quiet || git commit -m "chore: mark ${{ matrix.version }} as published"
           git push
 
+      - name: Create signed tag
+        if: ${{ !github.event.inputs.dry_run }}
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag -s "v${{ matrix.version }}" -m "Zig ${{ matrix.version }}"
+          git push origin "v${{ matrix.version }}"
+
       - name: Create GitHub Release
         if: ${{ !github.event.inputs.dry_run }}
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           tag_name: v${{ matrix.version }}
           name: Zig ${{ matrix.version }}
-          body: |
-            ## Zig ${{ matrix.version }}
-
-            Published to npm as [@zigpm/zig](https://www.npmjs.com/package/@zigpm/zig).
-
-            ```bash
-            npm install -g @zigpm/zig
-            ```
+          body: ${{ steps.notes.outputs.body }}
           draft: false
           prerelease: ${{ contains(matrix.version, 'dev') || contains(matrix.version, 'beta') || contains(matrix.version, 'rc') }}
           files: |

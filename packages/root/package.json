@@ -1,0 +1,29 @@
+{
+  "name": "@zigpm/zig",
+  "version": "0.0.0",
+  "description": "Modern Zig distribution for npm",
+  "keywords": ["zig", "ziglang", "compiler", "zigpm"],
+  "license": "MIT",
+  "homepage": "https://github.com/zigpm/zig",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigpm/zig.git"
+  },
+  "bin": {
+    "zig": "zig"
+  },
+  "optionalDependencies": {
+    "@zigpm/zig-linux-x64": "0.0.0",
+    "@zigpm/zig-linux-arm64": "0.0.0",
+    "@zigpm/zig-linux-riscv64": "0.0.0",
+    "@zigpm/zig-linux-loong64": "0.0.0",
+    "@zigpm/zig-darwin-x64": "0.0.0",
+    "@zigpm/zig-darwin-arm64": "0.0.0",
+    "@zigpm/zig-win32-x64": "0.0.0",
+    "@zigpm/zig-win32-arm64": "0.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "preferUnplugged": true
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@zigpm/zig-darwin-arm64",
+  "version": "0.0.0",
+  "description": "Zig compiler for darwin-arm64",
+  "os": ["darwin"],
+  "cpu": ["arm64"],
+  "license": "MIT",
+  "preferUnplugged": true
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@zigpm/zig-linux-riscv64",
+  "version": "0.0.0",
+  "description": "Zig compiler for linux-riscv64",
+  "os": ["linux"],
+  "cpu": ["riscv64"],
+  "license": "MIT",
+  "preferUnplugged": true
+}

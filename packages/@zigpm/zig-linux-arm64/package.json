@@ -1,0 +1,9 @@
+{
+  "name": "@zigpm/zig-linux-arm64",
+  "version": "0.0.0",
+  "description": "Zig compiler for linux-arm64",
+  "os": ["linux,android"],
+  "cpu": ["arm64"],
+  "license": "MIT",
+  "preferUnplugged": true
+}

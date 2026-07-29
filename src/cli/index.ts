@@ -7,7 +7,7 @@ import { publishVersion } from "../publish/publish";
 import { clearMirrorCache } from "../download/mirrors";
 import { clearReleaseCache } from "../releases/releases";
 import { getPublishedVersions } from "../sync/sync";
-import { fetchReleaseIndex, getUnpublishedReleases } from "../releases/releases";
+import { fetchReleaseIndex, getUnpublishedReleases, getReleasePlatforms, getPlatformRelease } from "../releases/releases";
 import { SUPPORTED_PLATFORMS, getArchiveExtension } from "../utils/platform";
 import { ensureDir, tempDir } from "../utils/file";
 import { downloadFromMirrors } from "../download/download";
@@ -80,10 +80,11 @@ const commands: Record<string, CliCommand> = {
               : platform.suffix.replace("linux-", "");
           const ext = getArchiveExtension(platform.os);
 
-          const platformKey = Object.keys(release.platforms).find((k) => k.includes(archKey));
+          const platformKeys = getReleasePlatforms(release);
+          const platformKey = platformKeys.find((k) => k.includes(archKey));
           if (!platformKey) continue;
 
-          const platformRelease = release.platforms[platformKey];
+          const platformRelease = getPlatformRelease(release, platformKey);
           const archiveName = `zig-${platform.suffix}-${versionArg}.${ext}`;
 
           try {

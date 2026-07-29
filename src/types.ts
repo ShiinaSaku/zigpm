@@ -2,10 +2,18 @@ export interface ZigRelease {
   version: string;
   date: string;
   docs: string;
-  src: string | null;
+  src: {
+    tarball: string;
+    shasum: string;
+    size: string;
+  } | null;
   notes: string | null;
   published_at: string | null;
-  platforms: Record<string, ZigPlatformRelease>;
+  [platform: string]: ZigPlatformRelease | string | null | {
+    tarball: string;
+    shasum: string;
+    size: string;
+  } | undefined;
 }
 
 export interface ZigPlatformRelease {
