@@ -1,5 +1,5 @@
 import { expect, test, describe } from "bun:test";
-import { verifyArchive, createSignatureUrl } from "../src/verify/verify";
+import { verifyArchive } from "../src/verify/verify";
 import { writeFile, unlink, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
@@ -48,13 +48,5 @@ describe("verifyArchive", () => {
     expect(result.sha256Match).toBe(false);
 
     await unlink(testFile);
-  });
-});
-
-describe("createSignatureUrl", () => {
-  test("appends .minisig suffix", () => {
-    expect(createSignatureUrl("https://example.com/file.tar.xz")).toBe(
-      "https://example.com/file.tar.xz.minisig",
-    );
   });
 });

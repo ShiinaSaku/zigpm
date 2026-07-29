@@ -2,19 +2,17 @@ import { createHash } from "crypto";
 import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 import { logger } from "../utils/logger";
-import { verifyMinisign } from "./minisign";
 import type { VerifyResult } from "../types";
 
 export interface VerifyOptions {
   archivePath: string;
-  minisigPath?: string;
   expectedShasum?: string;
   expectedFilename?: string;
   expectedVersion?: string;
 }
 
 export async function verifyArchive(options: VerifyOptions): Promise<VerifyResult> {
-  const { archivePath, minisigPath, expectedShasum, expectedFilename, expectedVersion } = options;
+  const { archivePath, expectedShasum, expectedFilename, expectedVersion } = options;
   const errors: string[] = [];
   const result: VerifyResult = {
     valid: true,
@@ -50,18 +48,7 @@ export async function verifyArchive(options: VerifyOptions): Promise<VerifyResul
     }
   }
 
-  if (minisigPath && existsSync(minisigPath)) {
-    try {
-      result.signatureValid = await verifyMinisign(archivePath, minisigPath);
-      if (!result.signatureValid) {
-        errors.push("Minisign signature verification failed");
-      }
-    } catch (error) {
-      errors.push(`Minisign verification error: ${error instanceof Error ? error.message : error}`);
-    }
-  }
-
-  if (expectedVersion && result.sha256Match && result.signatureValid) {
+  if (expectedVersion && result.sha256Match) {
     logger.info(`Verified ${actualFilename} (version ${expectedVersion})`);
   }
 
@@ -72,8 +59,4 @@ export async function verifyArchive(options: VerifyOptions): Promise<VerifyResul
 async function computeSha256(filePath: string): Promise<string> {
   const fileBuffer = await readFile(filePath);
   return createHash("sha256").update(fileBuffer).digest("hex");
-}
-
-export function createSignatureUrl(archiveUrl: string): string {
-  return `${archiveUrl}.minisig`;
 }

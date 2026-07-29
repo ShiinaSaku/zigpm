@@ -70,12 +70,11 @@ export async function syncRelease(version: string, release: ZigRelease): Promise
     try {
       logger.info(`Processing ${platform.suffix}...`);
 
-      const { archive, minisig } = await downloadArchive(platformRelease.tarball, tmpDir);
+      const archive = await downloadArchive(platformRelease.tarball, tmpDir);
 
       const archiveName = archive.split("/").pop() ?? "";
       const verifyResult = await verifyArchive({
         archivePath: archive,
-        minisigPath: minisig,
         expectedShasum: platformRelease.shasum,
         expectedFilename: archiveName,
         expectedVersion: version,

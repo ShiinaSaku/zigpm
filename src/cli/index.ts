@@ -36,16 +36,15 @@ const commands: Record<string, CliCommand> = {
   },
   verify: {
     name: "verify",
-    description: "Verify archive integrity (minisign + sha256)",
+    description: "Verify archive integrity (sha256)",
     run: async (args: string[]) => {
-      const [archivePath, minisigPath] = args;
+      const [archivePath] = args;
       if (!archivePath) {
-        logger.error("Usage: zigpm verify <archive> [minisig]");
+        logger.error("Usage: zigpm verify <archive>");
         return;
       }
       const result = await verifyArchive({
         archivePath,
-        minisigPath: minisigPath || undefined,
       });
       if (result.valid) {
         logger.info("Verification passed");

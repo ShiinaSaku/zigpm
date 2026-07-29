@@ -104,20 +104,13 @@ export async function downloadFromMirrors(
 export async function downloadArchive(
   tarballUrl: string,
   destDir: string,
-): Promise<{ archive: string; minisig: string }> {
+): Promise<string> {
   const url = new URL(tarballUrl);
   const archiveName = url.pathname.split("/").pop()!;
-  const minisigName = `${archiveName}.minisig`;
   const archivePath = `${destDir}/${archiveName}`;
-  const minisigPath = `${destDir}/${minisigName}`;
 
   const pathParts = url.pathname.split("/");
   const version = pathParts[pathParts.length - 2] ?? "";
 
-  const [archive, minisig] = await Promise.all([
-    downloadFromMirrors(archiveName, archivePath, { version }),
-    downloadFromMirrors(minisigName, minisigPath, { version }),
-  ]);
-
-  return { archive, minisig };
+  return await downloadFromMirrors(archiveName, archivePath, { version });
 }
