@@ -61,12 +61,13 @@ export async function downloadFile(options: DownloadOptions): Promise<string> {
 }
 
 export async function downloadFromMirrors(
-  path: string,
+  filename: string,
   dest: string,
-  options?: { retries?: number; timeout?: number },
+  options?: { retries?: number; timeout?: number; version?: string },
 ): Promise<string> {
   const mirrors = await fetchMirrors();
   const shuffled = shuffleMirrors(mirrors);
+  const source = "zigpm";
 
   const maxRetries = options?.retries ?? 3;
   let attempt = 0;
@@ -75,7 +76,7 @@ export async function downloadFromMirrors(
     attempt++;
     if (attempt > maxRetries) break;
 
-    const url = `${mirror.url}/${path}`;
+    const url = `${mirror.url}/${filename}?source=${source}`;
     try {
       return await downloadFile({
         url,
@@ -89,7 +90,8 @@ export async function downloadFromMirrors(
     }
   }
 
-  const directUrl = `https://ziglang.org/download/${path}`;
+  const version = options?.version ?? "";
+  const directUrl = `https://ziglang.org/download/${version}/${filename}`;
   logger.info("All mirrors failed, trying direct download");
   return await downloadFile({
     url: directUrl,
@@ -109,11 +111,12 @@ export async function downloadArchive(
   const archivePath = `${destDir}/${archiveName}`;
   const minisigPath = `${destDir}/${minisigName}`;
 
-  const relativePath = url.pathname.replace(/^\//, "");
+  const pathParts = url.pathname.split("/");
+  const version = pathParts[pathParts.length - 2] ?? "";
 
   const [archive, minisig] = await Promise.all([
-    downloadFromMirrors(relativePath, archivePath),
-    downloadFromMirrors(`${relativePath}.minisig`, minisigPath),
+    downloadFromMirrors(archiveName, archivePath, { version }),
+    downloadFromMirrors(minisigName, minisigPath, { version }),
   ]);
 
   return { archive, minisig };

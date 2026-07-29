@@ -88,7 +88,7 @@ const commands: Record<string, CliCommand> = {
           const archiveName = url.pathname.split("/").pop()!;
 
           try {
-            const archive = await downloadFromMirrors(url.pathname.replace(/^\//, ""), `${tmpDir}/${archiveName}`);
+            const archive = await downloadFromMirrors(archiveName, `${tmpDir}/${archiveName}`, { version: versionArg });
             const extractDir = `${tmpDir}/extracted-${platform.suffix}`;
             await extractArchive({
               archivePath: archive,
