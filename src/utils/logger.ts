@@ -37,7 +37,7 @@ class Logger {
     if (level === "error") {
       console.error(output);
     } else {
-      console.log(output);
+      console.error(output);
     }
   }
 
