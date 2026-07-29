@@ -110,8 +110,8 @@ export async function downloadArchive(
   const archivePath = `${destDir}/${archiveName}`;
   const minisigPath = `${destDir}/${minisigName}`;
 
-  const archiveUrl = `zig-${platformSuffix}-${version}.${ext}`;
-  const minisigUrl = `${archiveUrl}.minisig`;
+  const archiveUrl = `${version}/zig-${platformSuffix}-${version}.${ext}`;
+  const minisigUrl = `${version}/${archiveName}.minisig`;
 
   const [archive, minisig] = await Promise.all([
     downloadFromMirrors(archiveUrl, archivePath),
