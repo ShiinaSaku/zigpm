@@ -1,7 +1,8 @@
 import { createHash } from "crypto";
-import { readFile, unlink } from "fs/promises";
+import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 import { logger } from "../utils/logger";
+import { verifyMinisign } from "./minisign";
 import type { VerifyResult } from "../types";
 
 export interface VerifyOptions {
@@ -71,27 +72,6 @@ export async function verifyArchive(options: VerifyOptions): Promise<VerifyResul
 async function computeSha256(filePath: string): Promise<string> {
   const fileBuffer = await readFile(filePath);
   return createHash("sha256").update(fileBuffer).digest("hex");
-}
-
-async function verifyMinisign(archivePath: string, minisigPath: string): Promise<boolean> {
-  const publicKey = "RWSGOq2NcAEF11d8g3NRnZiz0eQJ9w2LmP8z5Fn0fTsZx7mz3j5gG4c";
-
-  try {
-    const proc = Bun.spawnSync([
-      "minisign",
-      "-V",
-      "-m",
-      archivePath,
-      "-P",
-      publicKey,
-      "-x",
-      minisigPath,
-    ]);
-    return proc.exitCode === 0;
-  } catch (error) {
-    logger.warn(`Minisign verification failed (binary not found?): ${error}`);
-    return false;
-  }
 }
 
 export function createSignatureUrl(archiveUrl: string): string {
