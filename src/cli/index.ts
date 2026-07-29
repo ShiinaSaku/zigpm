@@ -8,7 +8,7 @@ import { clearMirrorCache } from "../download/mirrors";
 import { clearReleaseCache } from "../releases/releases";
 import { getPublishedVersions } from "../sync/sync";
 import { fetchReleaseIndex, getUnpublishedReleases, getReleasePlatforms, getPlatformRelease } from "../releases/releases";
-import { SUPPORTED_PLATFORMS, getArchiveExtension } from "../utils/platform";
+import { SUPPORTED_PLATFORMS } from "../utils/platform";
 import { ensureDir, tempDir } from "../utils/file";
 import { downloadFromMirrors } from "../download/download";
 import { extractArchive } from "../extract/extract";
@@ -78,17 +78,17 @@ const commands: Record<string, CliCommand> = {
             : platform.suffix.includes("windows")
               ? platform.suffix.replace("windows-", "")
               : platform.suffix.replace("linux-", "");
-          const ext = getArchiveExtension(platform.os);
 
           const platformKeys = getReleasePlatforms(release);
           const platformKey = platformKeys.find((k) => k.includes(archKey));
           if (!platformKey) continue;
 
           const platformRelease = getPlatformRelease(release, platformKey);
-          const archiveName = `zig-${platform.suffix}-${versionArg}.${ext}`;
+          const url = new URL(platformRelease.tarball);
+          const archiveName = url.pathname.split("/").pop()!;
 
           try {
-            const archive = await downloadFromMirrors(archiveName, `${tmpDir}/${archiveName}`);
+            const archive = await downloadFromMirrors(url.pathname.replace(/^\//, ""), `${tmpDir}/${archiveName}`);
             const extractDir = `${tmpDir}/extracted-${platform.suffix}`;
             await extractArchive({
               archivePath: archive,

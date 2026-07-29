@@ -100,22 +100,20 @@ export async function downloadFromMirrors(
 }
 
 export async function downloadArchive(
-  version: string,
-  platformSuffix: string,
+  tarballUrl: string,
   destDir: string,
-  ext: string,
 ): Promise<{ archive: string; minisig: string }> {
-  const archiveName = `zig-${platformSuffix}-${version}.${ext}`;
+  const url = new URL(tarballUrl);
+  const archiveName = url.pathname.split("/").pop()!;
   const minisigName = `${archiveName}.minisig`;
   const archivePath = `${destDir}/${archiveName}`;
   const minisigPath = `${destDir}/${minisigName}`;
 
-  const archiveUrl = `${version}/zig-${platformSuffix}-${version}.${ext}`;
-  const minisigUrl = `${version}/${archiveName}.minisig`;
+  const relativePath = url.pathname.replace(/^\//, "");
 
   const [archive, minisig] = await Promise.all([
-    downloadFromMirrors(archiveUrl, archivePath),
-    downloadFromMirrors(minisigUrl, minisigPath),
+    downloadFromMirrors(relativePath, archivePath),
+    downloadFromMirrors(`${relativePath}.minisig`, minisigPath),
   ]);
 
   return { archive, minisig };

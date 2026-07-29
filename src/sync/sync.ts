@@ -7,7 +7,7 @@ import { downloadArchive } from "../download/download";
 import { verifyArchive } from "../verify/verify";
 import { extractArchive } from "../extract/extract";
 import { generatePlatformPackage, generateRootPackage } from "../generate/generate";
-import { SUPPORTED_PLATFORMS, getArchiveExtension } from "../utils/platform";
+import { SUPPORTED_PLATFORMS } from "../utils/platform";
 import { tempDir } from "../utils/file";
 import type { SyncResult, ZigRelease } from "../types";
 
@@ -66,14 +66,13 @@ export async function syncRelease(version: string, release: ZigRelease): Promise
     }
 
     const platformRelease = getPlatformRelease(release, platformKey);
-    const ext = getArchiveExtension(platform.os);
 
     try {
       logger.info(`Processing ${platform.suffix}...`);
 
-      const { archive, minisig } = await downloadArchive(version, platform.suffix, tmpDir, ext);
+      const { archive, minisig } = await downloadArchive(platformRelease.tarball, tmpDir);
 
-      const archiveName = `zig-${platform.suffix}-${version}.${ext}`;
+      const archiveName = archive.split("/").pop() ?? "";
       const verifyResult = await verifyArchive({
         archivePath: archive,
         minisigPath: minisig,
