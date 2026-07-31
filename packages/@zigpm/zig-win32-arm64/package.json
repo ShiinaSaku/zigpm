@@ -1,9 +1,0 @@
-{
-  "name": "@zigpm/zig-win32-arm64",
-  "version": "0.0.0",
-  "description": "Zig compiler for win32-arm64",
-  "os": ["win32"],
-  "cpu": ["arm64"],
-  "license": "MIT",
-  "preferUnplugged": true
-}

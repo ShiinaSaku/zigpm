@@ -10,30 +10,13 @@
     "zigpm"
   ],
   "license": "MIT",
-  "bin": {
-    "zig": "./packages/root/zig"
-  },
-  "files": [
-    "packages",
-    "LICENSE"
-  ],
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "clean": "bun run src/cli/index.ts clean",
-    "sync": "bun run src/cli/index.ts sync",
-    "verify": "bun run src/cli/index.ts verify",
-    "generate": "bun run src/cli/index.ts generate",
-    "publish": "bun run src/cli/index.ts publish",
-    "test": "bun test",
-    "lint": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "publish": "bun zigpm.ts",
+    "publish:dry": "bun zigpm.ts --dry-run",
+    "build": "bun zigpm.ts --dry-run"
   },
   "dependencies": {},
-  "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "^6"
-  },
   "engines": {
     "node": ">=18"
   }

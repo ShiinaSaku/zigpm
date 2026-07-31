@@ -1,11 +1,8 @@
 node_modules/
 dist/
-packages/*/zig
-packages/*/bin/
 *.tar.xz
 *.tar.gz
 *.zip
-*.minisig
-tmp/
+@zigpm/
 .env
 *.log

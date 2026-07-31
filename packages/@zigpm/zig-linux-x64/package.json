@@ -1,9 +1,0 @@
-{
-  "name": "@zigpm/zig-linux-x64",
-  "version": "0.0.0",
-  "description": "Zig compiler for linux-x64",
-  "os": ["linux"],
-  "cpu": ["x64"],
-  "license": "MIT",
-  "preferUnplugged": true
-}

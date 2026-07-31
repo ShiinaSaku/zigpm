@@ -1,62 +1,53 @@
-# @zigpm/zig — Modern Zig Distribution for npm
+# @zigpm/zig
 
-The definitive, community-maintained npm distribution of the [Zig](https://ziglang.org) compiler.
+Modern Zig distribution for npm — automatically packages every official
+[Zig](https://ziglang.org) release.
 
 ```bash
 npm install -g @zigpm/zig
+zig version
 ```
 
-## Features
+## How it works
 
-- **All official releases** — Stable, Beta, Release Candidate, and Development snapshots
-- **All platforms** — linux-x64, linux-arm64, linux-riscv64, linux-loong64, darwin-x64, darwin-arm64, win32-x64, win32-arm64
-- **Zero setup** — Just `npm install`
-- **Verified binaries** — Every archive is verified with minisign signatures and SHA256 checksums
-- **Automatic updates** — GitHub Actions publishes new releases automatically
+`zigpm.ts` is the whole project. It:
+
+1. Fetches the official release index (`https://ziglang.org/download/index.json`)
+2. Downloads every platform archive (linux/darwin/win32 × x64/arm64/riscv64/loong64)
+3. Extracts, verifies, and builds `@zigpm/zig-<os>-<cpu>` platform packages
+4. Builds the root `@zigpm/zig` package with a platform-detecting `zig` wrapper
+5. Publishes everything to npm
+
+The root package uses npm `optionalDependencies` so only your platform's
+binary is installed. The `linux-arm64` package also declares `os: ["android"]`
+so it works on ARM64 Android (e.g. Termux).
 
 ## Usage
 
 ```bash
-# Install globally
-npm install -g @zigpm/zig
+# Publish the latest release (set ZIG_VERSION to pin one)
+bun zigpm.ts
 
-# Run zig
-zig version
-zig build-exe hello.zig
+# Publish a specific version / channel
+ZIG_VERSION=0.16.0 bun zigpm.ts
 
-# Or use npx
-npx @zigpm/zig version
+# Dry run — do everything but `npm publish --dry-run`
+bun zigpm.ts --dry-run
+
+# Only build one platform (useful for CI / testing)
+ZIG_VERSION=0.15.2 ZIG_PLATFORM=linux-x64 bun zigpm.ts --dry-run
 ```
 
-## How It Works
+Environment:
 
-The root `@zigpm/zig` package uses npm `optionalDependencies` to install only the platform-specific package for the user's system.
+| Var            | Default     | Purpose                         |
+| -------------- | ----------- | ------------------------------- |
+| `ZIG_VERSION`  | `latest`    | Release to package, or `latest` |
+| `ZIG_PLATFORM` | all         | Build only one `os-cpu` pair    |
+| `INDEX_URL`    | ziglang.org | Release index URL               |
 
-Each platform package contains:
-
-- The `zig` (or `zig.exe`) binary
-- `package.json` with os/cpu restrictions
-- License file
-
-## Development
-
-```bash
-# Install dependencies
-bun install
-
-# Sync latest releases
-bun run sync
-
-# Generate packages locally
-bun run generate
-
-# Run tests
-bun test
-
-# Type check
-bun run typecheck
-```
+Requires `tar` (xz) and `unzip` on the machine.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT
