@@ -8,6 +8,9 @@ const INDEX_URL = process.env.INDEX_URL || "https://ziglang.org/download/index.j
 const ZIG_VERSION = process.env.ZIG_VERSION || "latest";
 const ONLY_PLATFORM = process.env.ZIG_PLATFORM || "";
 
+const REPOSITORY = process.env.GITHUB_REPOSITORY || "ShiinaSaku/zigpm";
+const REPOSITORY_URL = `git+https://github.com/${REPOSITORY}.git`;
+
 const OS_TO_NPM: Record<string, string> = {
   macos: "darwin",
   linux: "linux",
@@ -55,6 +58,92 @@ const META_KEYS = new Set([
 
 const ROOT_PACKAGE = "@zigpm/zig";
 
+const INSTALL_JS = `#!/usr/bin/env node
+import { spawnSync } from "node:child_process";
+import { chmodSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+const root = dirname(fileURLToPath(import.meta.url));
+
+export function extractArchive(archivePath, destDir, binary) {
+  rmSync(destDir, { recursive: true, force: true });
+  mkdirSync(destDir, { recursive: true });
+  const proc = spawnSync("tar", ["-xf", archivePath, "-C", destDir], { stdio: "inherit" });
+  if (proc.status !== 0) {
+    throw new Error("zigpm: failed to extract " + archivePath + " (tar is required)");
+  }
+  const entries = readdirSync(destDir);
+  const top = entries.length === 1 ? join(destDir, entries[0]) : destDir;
+  for (const entry of readdirSync(top)) {
+    renameSync(join(top, entry), join(destDir, entry));
+  }
+  if (top !== destDir) rmSync(top, { recursive: true, force: true });
+  if (process.platform !== "win32") chmodSync(join(destDir, binary), 0o755);
+}
+
+function main() {
+  const binary = process.platform === "win32" ? "zig.exe" : "zig";
+  const zigDir = join(root, "zig");
+  if (existsSync(join(zigDir, binary))) {
+    process.exit(0);
+  }
+
+  const archive = existsSync(join(root, "zig.zip")) ? "zig.zip" : "zig.tar.xz";
+  if (!existsSync(join(root, archive))) {
+    console.error("zigpm: missing " + archive + ", reinstall the package to restore it");
+    process.exit(1);
+  }
+
+  try {
+    extractArchive(join(root, archive), zigDir, binary);
+  } catch (error) {
+    console.error(String(error));
+    process.exit(1);
+  }
+  rmSync(join(root, archive), { force: true });
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}
+`;
+
+const LAUNCHER_JS = `#!/usr/bin/env node
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { extractArchive } from "../install.mjs";
+
+const binDir = dirname(fileURLToPath(import.meta.url));
+const root = dirname(binDir);
+const binary = process.platform === "win32" ? "zig.exe" : "zig";
+
+let target = join(root, "zig", binary);
+if (!existsSync(target)) {
+  const cacheDir = join(homedir(), ".cache", "zigpm", process.platform + "-" + process.arch);
+  target = join(cacheDir, binary);
+  if (!existsSync(target)) {
+    const archive = existsSync(join(root, "zig.zip")) ? "zig.zip" : "zig.tar.xz";
+    if (!existsSync(join(root, archive))) {
+      console.error("zigpm: missing " + archive + ", reinstall the package to restore it");
+      process.exit(1);
+    }
+    try {
+      extractArchive(join(root, archive), cacheDir, binary);
+    } catch (error) {
+      console.error(String(error));
+      process.exit(1);
+    }
+  }
+}
+
+const proc = spawnSync(target, process.argv.slice(2), { stdio: "inherit" });
+process.exit(proc.status === null ? 1 : proc.status);
+`;
+
 const ZIG_WRAPPER = `#!/usr/bin/env bash
 root="$(dirname "$(dirname "$(readlink -f "$0")")")"
 platform_pkg="@zigpm/zig-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/x64/; s/aarch64/arm64/')"
@@ -62,7 +151,9 @@ platform_dir="$root/node_modules/$platform_pkg"
 if [ ! -d "$platform_dir" ]; then
   platform_dir="$root/../$platform_pkg"
 fi
-if [ -f "$platform_dir/bin/zig" ]; then
+if [ -f "$platform_dir/bin/zig.mjs" ]; then
+  exec "$platform_dir/bin/zig.mjs" "$@"
+elif [ -f "$platform_dir/bin/zig" ]; then
   exec "$platform_dir/bin/zig" "$@"
 elif [ -f "$platform_dir/bin/zig.exe" ]; then
   exec "$platform_dir/bin/zig.exe" "$@"
@@ -139,7 +230,7 @@ class Download {
     );
   }
 
-  async extract() {
+  async download() {
     if (existsSync(this.folder)) rmSync(this.folder, { recursive: true, force: true });
 
     await Bun.write(this.fileName, this.blob);
@@ -147,22 +238,21 @@ class Download {
     this.blob = undefined;
 
     const name = this.fileName;
-    const args = name.endsWith(".zip")
-      ? ["unzip", "-o", name]
-      : ["tar", name.endsWith(".gz") ? "-xzf" : "-xJf", name];
+    const args = name.endsWith(".zip") ? ["unzip", "-t", name] : ["tar", "-tf", name];
     const proc = Bun.spawnSync(args, { stderr: "pipe", stdout: "ignore" });
     if (proc.exitCode !== 0) {
-      throw new Error(`failed to extract ${name}: ${proc.stderr.toString() || "unknown error"}`);
+      throw new Error(`invalid archive ${name}: ${proc.stderr.toString() || "unknown error"}`);
     }
-
-    rmSync(this.fileName, { force: true });
   }
 
   async generatePackage() {
     const npmOs = OS_TO_NPM[this.os];
     const npmCpu = ARCH_TO_NPM[this.arch];
-    const binary = this.os === "windows" ? "zig.exe" : "zig";
     this.packageName = `@zigpm/zig-${npmOs}-${npmCpu}`;
+
+    const archive = this.os === "windows" ? "zig.zip" : "zig.tar.xz";
+    mkdirSync(this.folder, { recursive: true });
+    renameSync(this.fileName, join(this.folder, archive));
 
     const packageJson = {
       name: this.packageName,
@@ -171,27 +261,22 @@ class Download {
       os: NPM_OS[`${npmOs}-${npmCpu}`] ?? [npmOs],
       cpu: [npmCpu],
       license: "MIT",
-      bin: { zig: `bin/${binary}` },
+      repository: { type: "git", url: REPOSITORY_URL },
+      bin: { zig: "bin/zig.mjs" },
+      scripts: { postinstall: "node install.mjs" },
       preferUnplugged: true,
     };
 
     await Bun.write(join(this.folder, "package.json"), JSON.stringify(packageJson, null, 2));
-    console.log(`Saved ${this.folder}/package.json`);
-
-    const sourceBinary = join(this.folder, binary);
-    if (!existsSync(sourceBinary)) {
-      throw new Error(`binary not found: ${sourceBinary}`);
-    }
-
-    const binDir = join(this.folder, "bin");
-    mkdirSync(binDir, { recursive: true });
-    renameSync(sourceBinary, join(binDir, binary));
-    chmodSync(join(binDir, binary), 0o755);
+    await Bun.write(join(this.folder, "install.mjs"), INSTALL_JS);
+    const launcher = join(this.folder, "bin", "zig.mjs");
+    mkdirSync(dirname(launcher), { recursive: true });
+    await Bun.write(launcher, LAUNCHER_JS);
+    chmodSync(launcher, 0o755);
 
     rmSync(this.packageName, { recursive: true, force: true });
     mkdirSync(dirname(this.packageName), { recursive: true });
-
-    console.log(`Renaming ${this.folder} to ${this.packageName}`);
+    console.log(`Packaged ${this.packageName}`);
     renameSync(this.folder, this.packageName);
   }
 }
@@ -250,7 +335,7 @@ async function main() {
         .then((blob) => new Download(tarball, arch, os, version, blob))
         .then((download) =>
           download
-            .extract()
+            .download()
             .then(() => download.generatePackage())
             .then(() => download),
         )
@@ -272,8 +357,8 @@ async function main() {
     version,
     description: "Zig compiler for all platforms",
     license: "MIT",
+    repository: { type: "git", url: REPOSITORY_URL },
     optionalDependencies: Object.fromEntries(all.map((d) => [d.packageName, version])),
-    repository: "https://github.com/zigpm/zig",
     bin: { zig: "zig" },
     preferUnplugged: true,
   };
@@ -285,28 +370,29 @@ async function main() {
   chmodSync(`${ROOT_PACKAGE}/zig`, 0o777);
   await Bun.write(`${ROOT_PACKAGE}/package.json`, JSON.stringify(rootPackage, null, 2));
 
-  for (const downloaded of all) {
-    if (!existsSync(downloaded.packageName)) {
-      throw new Error(`missing ${downloaded.packageName}`);
-    }
-  }
-
   const targets = [...all.map((d) => d.packageName), ROOT_PACKAGE];
 
   for (const dir of targets) {
+    if (!existsSync(dir)) {
+      throw new Error(`missing ${dir}`);
+    }
+
     if (await isPublished(dir, version)) {
       console.log(`Already published ${dir}@${version}`);
       continue;
     }
 
-    const { exited } = Bun.spawn({
+    console.log(`Publishing ${dir}@${version}`);
+    const proc = Bun.spawnSync({
       cmd: ["npm", "publish", "--access", "public", DRY_RUN ? "--dry-run" : ""].filter(Boolean),
       cwd: dir,
       stderr: "inherit",
       stdin: "inherit",
       stdout: "inherit",
     });
-    await exited;
+    if (proc.exitCode !== 0) {
+      throw new Error(`npm publish failed for ${dir}@${version} (exit ${proc.exitCode})`);
+    }
   }
 }
 
